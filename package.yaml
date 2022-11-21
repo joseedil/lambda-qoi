@@ -1,10 +1,10 @@
-name:                lambda-qoi
-version:             0.1.0.0
+name:                  lambda-qoi
+version:            0.1.0.0
 github:              "joseedil/lambda-qoi"
-license:             BSD3
+license:            BSD3
 author:              "Edil Medeiros"
-maintainer:          "jose.edil@gmail.com"
-copyright:           "2022 Edil Medeiros"
+maintainer:      "jose.edil@gmail.com"
+copyright:        "2022 Edil Medeiros"
 
 extra-source-files:
 - README.md
@@ -21,6 +21,8 @@ description:         Please see the README on GitHub at <https://github.com/jose
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
+- binary
 
 ghc-options:
 - -Wall
@@ -28,7 +30,7 @@ ghc-options:
 - -Widentities
 - -Wincomplete-record-updates
 - -Wincomplete-uni-patterns
-- -Wmissing-export-lists
+#- -Wmissing-export-lists
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
@@ -36,9 +38,13 @@ ghc-options:
 library:
   source-dirs: src
 
+default-extensions:
+  - OverloadedStrings
+  - DeriveGeneric
+
 executables:
   lambda-qoi-exe:
-    main:                Main.hs
+    main:                       Main.hs
     source-dirs:         app
     ghc-options:
     - -threaded
@@ -57,3 +63,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - lambda-qoi
+    - tasty
+    - tasty-hunit
