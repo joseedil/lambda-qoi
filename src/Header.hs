@@ -62,19 +62,3 @@ instance Binary Header where
      else fail "Invalid magic word"
      where validMagic :: (Word8, Word8, Word8, Word8) -> Bool
            validMagic word = word == (113, 111, 105, 102)
-       
-    
-validHeader :: B.ByteString
-validHeader = B.pack [113, 111, 105, 102, 0, 0, 0, 10, 0, 0, 0, 10, 3, 0]
-
-invalidMagic :: B.ByteString
-invalidMagic = B.pack [113, 112, 105, 102, 0, 0, 0, 10, 0, 0, 0, 10, 3, 0]
-
-
-testHeader2 :: Header
-testHeader2 = Header
-  { hWidth = 20,
-    hHeight = 20,
-    hChannels = RGB,
-    hColorspace = Linear
-    }

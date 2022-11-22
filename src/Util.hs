@@ -1,13 +1,12 @@
 
 module Util where
 
-import Data.Int (Int64)
 import Data.Word
 import Data.Bits
-import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString as BS
 
 infix 4 !
-(!) :: BS.ByteString -> Int64 -> Word8
+(!) :: BS.ByteString -> Int -> Word8
 (!) = BS.index
 
 infix 8 .>>., .<<.
