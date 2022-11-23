@@ -1,7 +1,6 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE BinaryLiterals #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# OPTIONS_GHC -O2 -fllvm #-}
 
 module Decoder where
 
@@ -25,7 +24,7 @@ data Chunk pixel = One pixel        -- Got a pixel
                  | Repeat Int       -- Pixel should be repeated from previous
                  | Lookback Int     -- Pixel should be taken from the array
 
-decodeChunk :: Pixel.Pixel px => BS.ByteString -> Int -> px -> (Int, Chunk px)
+decodeChunk :: PixelDecode px => BS.ByteString -> Int -> px -> (Int, Chunk px)
 decodeChunk str pos prevPixel
   -- QOI_OP_RGB
   | byte == 0b11111110 = let r' = str ! pos + 1
@@ -63,7 +62,7 @@ decodeChunk str pos prevPixel
       _ -> error "can't happen"
   where byte = str ! pos
 
-decodeQoi :: Pixel.Pixel px => BS.ByteString -> Int -> V.Vector px
+decodeQoi :: PixelDecode px => BS.ByteString -> Int -> V.Vector px
 decodeQoi str n = V.create $ do
   -- dataVec is where we store our data during the stateful computation
   dataVec <- VM.new n
@@ -101,8 +100,6 @@ decodeQoi str n = V.create $ do
   -- Return dataVec to freeze the final Vector
   return dataVec
 
-data DynamicPixels = Pixels3 (V.Vector Pixel3)
-                   | Pixels4 (V.Vector Pixel4)
 
 decodeQoiBS :: BS.ByteString -> Maybe (Header, DynamicPixels)
 decodeQoiBS str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of

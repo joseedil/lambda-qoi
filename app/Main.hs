@@ -7,19 +7,6 @@ import System.Exit
 import Codec.Picture
 import qualified Data.ByteString as BS
 
--- main :: IO ()
--- main = do
---   args <- getArgs
---   if null args
---     then do putStrLn "usage: lambda-qoi filename"
---             exitWith $ ExitFailure 1
---     else do
---     file <- BS.readFile $ head args
---     result <- return . decodeQoi $ file
---     print result
---     exitSuccess
-
-
 main :: IO ()
 main = do
   args <- getArgs
@@ -32,8 +19,7 @@ main = do
       case result of
         Nothing -> do putStrLn "Decoding failed"
                       exitWith $ ExitFailure 2
-        Just (header, image) -> do print header
-                                   writePng pngFilename image
-                                   exitSuccess
+        Just (_, image) -> do writePng pngFilename image
+                              exitSuccess
     _ -> do putStrLn "usage: lambda-qoi qoi-filename png-filename"
             exitWith $ ExitFailure 1

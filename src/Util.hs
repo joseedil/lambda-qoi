@@ -1,5 +1,4 @@
 {-# LANGUAGE Strict #-}
-{-# OPTIONS_GHC -O2 -fllvm #-}
 
 module Util where
 

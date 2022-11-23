@@ -27,6 +27,7 @@ dependencies:
 - JuicyPixels
 
 ghc-options:
+- -O2
 - -Wall
 - -Wcompat
 - -Widentities
@@ -45,7 +46,7 @@ default-extensions:
   - DeriveGeneric
 
 executables:
-  lambda-qoi-exe:
+  lambda-qoi:
     main:                       Main.hs
     source-dirs:         app
     ghc-options:

@@ -1,10 +1,7 @@
 {-# LANGUAGE Strict #-}
-{-# OPTIONS_GHC -O2 -fllvm #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Header where
-
-import qualified Data.ByteString.Lazy as B
 
 import Data.Binary
 import Data.Binary.Get (getWord32be)
