@@ -1,5 +1,7 @@
+{-# LANGUAGE Strict #-}
 {-# LANGUAGE BinaryLiterals #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -O2 -fllvm #-}
 
 module Decoder where
 
@@ -8,12 +10,16 @@ import Pixel
 import Util
 
 import Data.Bits
+import Data.Binary (decodeOrFail)
+import Codec.Picture
+
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
-import Data.Binary (decodeOrFail)
+
+
 
 data Chunk pixel = One pixel        -- Got a pixel
                  | Repeat Int       -- Pixel should be repeated from previous
@@ -100,3 +106,18 @@ decodeQoi :: BS.ByteString -> Maybe (Header, V.Vector Pixel3)
 decodeQoi str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
   Left _ -> Nothing
   Right (_, _, h@Header {..}) -> Just (h, decode3ch (BS.drop 14 str) (fromIntegral $ hWidth * hHeight))
+
+
+decodeQoiPng :: BS.ByteString -> Maybe (Image PixelRGBA8)
+decodeQoiPng str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
+  Left _ -> Nothing
+  Right (_, _, Header {..}) -> Just $ generateImage (vectorToImage decodedVector) w h
+    where
+      w = fromIntegral hWidth
+      h = fromIntegral hHeight
+      decodedVector = decode3ch (BS.drop 14 str) (fromIntegral $ hWidth * hHeight)
+      --vectorToImage :: V.Vector Pixel3 -> Int -> Int -> Image px
+      vectorToImage vector x y =
+        let i = y * w + x
+            (r, g, b, a) = toRGBA $ vector V.! i
+        in PixelRGBA8 r g b a
