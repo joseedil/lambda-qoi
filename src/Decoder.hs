@@ -25,7 +25,7 @@ data Chunk pixel = One pixel        -- Got a pixel
                  | Repeat Int       -- Pixel should be repeated from previous
                  | Lookback Int     -- Pixel should be taken from the array
 
-decodeChunk :: BS.ByteString -> Int -> Pixel3 -> (Int, Chunk Pixel3)
+decodeChunk :: Pixel.Pixel px => BS.ByteString -> Int -> px -> (Int, Chunk px)
 decodeChunk str pos prevPixel
   -- QOI_OP_RGB
   | byte == 0b11111110 = let r' = str ! pos + 1
@@ -63,8 +63,8 @@ decodeChunk str pos prevPixel
       _ -> error "can't happen"
   where byte = str ! pos
 
-decode3ch :: BS.ByteString -> Int -> V.Vector Pixel3
-decode3ch str n = V.create $ do
+decodeQoi :: Pixel.Pixel px => BS.ByteString -> Int -> V.Vector px
+decodeQoi str n = V.create $ do
   -- dataVec is where we store our data during the stateful computation
   dataVec <- VM.new n
 
@@ -79,7 +79,7 @@ decode3ch str n = V.create $ do
   -- inPos manages the consumption of the input string
   -- outPos manages the writing on the data vector
   -- prevPixel is the last pixel we have seem
-  let step inPos outPos prevPixel
+  let loop inPos outPos prevPixel
         -- do not go further than the size of the data vector
         | outPos < n = do
             -- decode next chunk
@@ -87,37 +87,53 @@ decode3ch str n = V.create $ do
             case chunk of
               One px -> do VM.write dataVec outPos px
                            updateRunning px
-                           step (inPos + diff) (outPos + 1) px
+                           loop (inPos + diff) (outPos + 1) px
               Lookback pos -> do px <- VM.read running pos
                                  VM.write dataVec outPos px
-                                 step (inPos + diff) (outPos + 1) px
+                                 loop (inPos + diff) (outPos + 1) px
               Repeat qty -> do VM.set (VM.slice outPos qty dataVec) prevPixel
-                               step (inPos + diff) (outPos + qty) prevPixel
+                               loop (inPos + diff) (outPos + qty) prevPixel
         | otherwise = pure ()
 
   -- This will actually run the computation
-  step 0 0 (Pixel3 0 0 0)
+  loop 0 0 $ fromRGBA 0 0 0 255
 
   -- Return dataVec to freeze the final Vector
   return dataVec
 
+data DynamicPixels = Pixels3 (V.Vector Pixel3)
+                   | Pixels4 (V.Vector Pixel4)
 
-decodeQoi :: BS.ByteString -> Maybe (Header, V.Vector Pixel3)
-decodeQoi str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
+decodeQoiBS :: BS.ByteString -> Maybe (Header, DynamicPixels)
+decodeQoiBS str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
   Left _ -> Nothing
-  Right (_, _, h@Header {..}) -> Just (h, decode3ch (BS.drop 14 str) (fromIntegral $ hWidth * hHeight))
+  Right (_, _, h@Header {..}) ->
+    if hChannels == RGB
+    then Just (h, Pixels3 $ decodeQoi (BS.drop 14 str) (fromIntegral $ hWidth * hHeight))
+    else Just (h, Pixels4 $ decodeQoi (BS.drop 14 str) (fromIntegral $ hWidth * hHeight))
 
 
 decodeQoiPng :: BS.ByteString -> Maybe (Image PixelRGBA8)
-decodeQoiPng str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
-  Left _ -> Nothing
-  Right (_, _, Header {..}) -> Just $ generateImage (vectorToImage decodedVector) w h
-    where
-      w = fromIntegral hWidth
-      h = fromIntegral hHeight
-      decodedVector = decode3ch (BS.drop 14 str) (fromIntegral $ hWidth * hHeight)
-      --vectorToImage :: V.Vector Pixel3 -> Int -> Int -> Image px
-      vectorToImage vector x y =
-        let i = y * w + x
-            (r, g, b, a) = toRGBA $ vector V.! i
-        in PixelRGBA8 r g b a
+decodeQoiPng str =
+  case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
+    Left _ -> Nothing
+    Right (_, _, Header {..}) ->
+      case hChannels of
+        RGB -> Just $ generateImage (vectorToImage decoded3ch) w h
+        RGBA -> Just $ generateImage (vectorToImage decoded4ch) w h
+      where
+        w = fromIntegral hWidth
+        h = fromIntegral hHeight
+
+        decoded3ch = Pixels3 $ decodeQoi (BS.drop 14 str) (fromIntegral $ hWidth * hHeight)
+        decoded4ch = Pixels4 $ decodeQoi (BS.drop 14 str) (fromIntegral $ hWidth * hHeight)
+
+        vectorToImage :: DynamicPixels -> Int -> Int -> PixelRGBA8
+        vectorToImage dyn x y =
+          case dyn of
+            Pixels3 vec -> let (r, g, b, a) = toRGBA $ vec V.! i
+                           in PixelRGBA8 r g b a
+            Pixels4 vec -> let (r, g, b, a) = toRGBA $ vec V.! i
+                           in PixelRGBA8 r g b a
+          where
+            i = y * w + x

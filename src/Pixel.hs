@@ -37,3 +37,9 @@ instance Pixel Pixel3 where
   fromRGBA r g b _ = Pixel3 r g b
   readPixel str pos = Pixel3 (str ! pos) (str ! pos + 1) (str ! pos + 2)
   channelCount _ = 3
+
+instance Pixel Pixel4 where
+  toRGBA (Pixel4 r g b a) = (r, g, b, a)
+  fromRGBA = Pixel4
+  readPixel str pos = Pixel4 (str ! pos) (str ! pos + 1) (str ! pos + 2) (str ! pos + 3)
+  channelCount _ = 4
