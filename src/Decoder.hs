@@ -70,7 +70,7 @@ decodeQoi str n = V.create $ do
 
   -- running is the running array that is updated every time we
   -- discover a new pixel
-  running <- VM.replicate 64 $ fromRGBA 0 0 0 255
+  running <- VM.replicate 64 $ fromRGBA 0 0 0 0
 
   -- update function to the running vector
   let updateRunning px = VM.write running (pixelHash px) px
@@ -96,7 +96,7 @@ decodeQoi str n = V.create $ do
         | otherwise = pure ()
 
   -- This will actually run the computation
-  loop 0 0 $ fromRGBA 0 0 0 255
+  loop 0 0 initialPixel
 
   -- Return dataVec to freeze the final Vector
   return dataVec
@@ -113,14 +113,14 @@ decodeQoiBS str = case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
     else Just (h, Pixels4 $ decodeQoi (BS.drop 14 str) (fromIntegral $ hWidth * hHeight))
 
 
-decodeQoiPng :: BS.ByteString -> Maybe (Image PixelRGBA8)
+decodeQoiPng :: BS.ByteString -> Maybe (Header, Image PixelRGBA8)
 decodeQoiPng str =
   case decodeOrFail . BSL.fromStrict $ BS.take 14 str of
     Left _ -> Nothing
-    Right (_, _, Header {..}) ->
+    Right (_, _, header@Header {..}) ->
       case hChannels of
-        RGB -> Just $ generateImage (vectorToImage decoded3ch) w h
-        RGBA -> Just $ generateImage (vectorToImage decoded4ch) w h
+        RGB -> Just (header, generateImage (vectorToImage decoded3ch) w h)
+        RGBA -> Just (header, generateImage (vectorToImage decoded4ch) w h)
       where
         w = fromIntegral hWidth
         h = fromIntegral hHeight

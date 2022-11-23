@@ -32,14 +32,18 @@ class Pixel a where
   readPixel :: BS.ByteString -> Int -> a
   channelCount :: proxy a -> Int
 
+  initialPixel :: a
+
 instance Pixel Pixel3 where
   toRGBA (Pixel3 r g b) = (r, g, b, 255)
   fromRGBA r g b _ = Pixel3 r g b
   readPixel str pos = Pixel3 (str ! pos) (str ! pos + 1) (str ! pos + 2)
   channelCount _ = 3
+  initialPixel = fromRGBA 0 0 0 255
 
 instance Pixel Pixel4 where
   toRGBA (Pixel4 r g b a) = (r, g, b, a)
   fromRGBA = Pixel4
   readPixel str pos = Pixel4 (str ! pos) (str ! pos + 1) (str ! pos + 2) (str ! pos + 3)
   channelCount _ = 4
+  initialPixel = fromRGBA 0 0 0 255

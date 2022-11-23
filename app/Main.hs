@@ -32,8 +32,8 @@ main = do
       case result of
         Nothing -> do putStrLn "Decoding failed"
                       exitWith $ ExitFailure 2
-        Just image -> do putStrLn "Saving image"
-                         writePng pngFilename image
-                         exitSuccess
+        Just (header, image) -> do print header
+                                   writePng pngFilename image
+                                   exitSuccess
     _ -> do putStrLn "usage: lambda-qoi qoi-filename png-filename"
             exitWith $ ExitFailure 1
