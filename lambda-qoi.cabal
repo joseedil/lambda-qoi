@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Decoder
       Header
       Lib
       Pixel
@@ -41,6 +42,7 @@ library
       base >=4.7 && <5
     , binary
     , bytestring
+    , vector
   default-language: Haskell2010
 
 executable lambda-qoi-exe
@@ -58,6 +60,7 @@ executable lambda-qoi-exe
     , binary
     , bytestring
     , lambda-qoi
+    , vector
   default-language: Haskell2010
 
 test-suite lambda-qoi-test
@@ -78,4 +81,5 @@ test-suite lambda-qoi-test
     , lambda-qoi
     , tasty
     , tasty-hunit
+    , vector
   default-language: Haskell2010

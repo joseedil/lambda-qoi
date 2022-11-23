@@ -21,6 +21,10 @@ addRGBA :: Pixel p => p -> Word8 -> Word8 -> Word8 -> Word8 -> p
 addRGBA px dr dg db da = let (r, g, b, a) = toRGBA px
                          in fromRGBA (r + dr) (g + dg) (b + db) (a + da)
 
+pixelHash :: (Num a, Pixel p) => p -> a
+pixelHash px = fromIntegral $ (r * 3 + g * 5 + b * 7 + a * 11) `mod` 64
+  where (r, g, b, a) = toRGBA px
+
 class Pixel a where
   toRGBA :: a -> (Word8, Word8, Word8, Word8)
   fromRGBA :: Word8 -> Word8 -> Word8 -> Word8 -> a
