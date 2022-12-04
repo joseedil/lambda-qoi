@@ -1,5 +1,9 @@
 # lambda-qoi
 
+## Identification
+José Edil G. de Medeiros
+Brasília, Brazil
+
 Video demo:
 
 ## Description:
