@@ -17,7 +17,7 @@ data DynamicPixels = Pixels3 (V.Vector Pixel3)
 class PixelDecode a where
   toRGBA :: a -> (Word8, Word8, Word8, Word8)
   fromRGBA :: Word8 -> Word8 -> Word8 -> Word8 -> a
-  channelCount :: proxy a -> Int
+  channelCount :: a -> Int
 
 instance PixelDecode PixelRGB8 where
   toRGBA (PixelRGB8 r g b) = (r, g, b, 255)
