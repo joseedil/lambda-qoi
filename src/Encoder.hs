@@ -12,18 +12,18 @@ import Util
 
 import Data.Bits
 import Data.Word (Word8)
-import qualified Data.DList as L
-import Control.Monad.ST
-
-import qualified Data.ByteString.Builder as BSB
-import qualified Data.ByteString.Lazy as BSL
-
-import qualified Data.Vector.Mutable as VM
 import Data.Data
-import Codec.Picture
 import Data.Binary (encode)
 import Data.Maybe (fromJust)
+import Control.Monad.ST
 import Control.Applicative ((<|>))
+
+import Codec.Picture
+
+import qualified Data.DList as L
+import qualified Data.ByteString.Builder as BSB
+import qualified Data.ByteString.Lazy as BSL
+import qualified Data.Vector.Mutable as VM
 
 
 -- Checks if -bound <= delta < bound
@@ -117,9 +117,7 @@ encodeData _ image@Image{..} = mconcat . L.toList $ runST $ do
         -- actual pixel /= previous pixel: try other encoders
         | otherwise = do
             let actualPixel = pixelAt image x y
-                (r1, g1, b1, a1) = toRGBA actualPixel
-                (r0, g0, b0, a0) = toRGBA prevPixel
-                (dr, dg, db, da) = (r1 - r0, g1 - g0, b1 - b0, a1 - a0)
+                (dr, dg, db, da) = diffPixel prevPixel actualPixel
                 hash = pixelHash actualPixel
                 -- flush running encoder
                 runFlush = builders `L.snoc` encodeRun runLen

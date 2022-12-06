@@ -14,15 +14,14 @@ import Codec.Picture
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
-
 
 
 data Chunk pixel = One pixel        -- Got a pixel
                  | Repeat Int       -- Pixel should be repeated from previous
                  | Lookback Int     -- Pixel should be taken from the array
+
 
 decodeChunk :: PixelDecode px => BS.ByteString -> Int -> px -> (Int, Chunk px)
 decodeChunk str pos prevPixel
