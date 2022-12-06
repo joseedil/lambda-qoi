@@ -1,5 +1,6 @@
 {-# LANGUAGE Strict #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Header where
 
@@ -44,13 +45,14 @@ data Header = Header
 
 instance Binary Header where
   put (Header width height channels colorspace) = do
-    putList magic
+    put @Word8 113
+    put @Word8 111
+    put @Word8 105
+    put @Word8 102
     put width
     put height
     put channels
     put colorspace
-      where magic :: [Word8]
-            magic = [113, 111, 105, 102]
 
   get = do
    magicWord <- get :: Get (Word8, Word8, Word8, Word8)

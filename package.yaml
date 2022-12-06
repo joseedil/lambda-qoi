@@ -25,6 +25,7 @@ dependencies:
 - binary
 - vector
 - JuicyPixels
+- dlist
 
 ghc-options:
 - -O2
