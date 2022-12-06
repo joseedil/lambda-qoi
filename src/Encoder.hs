@@ -3,7 +3,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE BangPatterns #-}
 
 module Encoder where
 
@@ -14,24 +13,13 @@ import Util
 import Data.Bits
 import Data.Word (Word8)
 import qualified Data.DList as L
---import Data.Functor
---import Data.Binary (encode)
---import Control.Monad (when)
 import Control.Monad.ST
 
---import Codec.Picture
-
---import qualified Data.ByteString as BS
 import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Lazy as BSL
 
---import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as VM
---import qualified Data.Vector.Storable as VS
 import Data.Data
-import Control.Applicative ((<|>))
-import Data.Maybe (fromJust)
---import Data.STRef
 import Codec.Picture
 import Data.Binary (encode)
 
@@ -96,60 +84,11 @@ encodeRun :: Int -> BSB.Builder
 encodeRun 0 = mempty
 encodeRun runLen = BSB.word8 $ 0b11000000 .|. fromIntegral (runLen - 1)
 
+
+-- Constants
 maxRunLen :: Int
 maxRunLen = 62
 
-maxResultSize :: Header -> Int
-maxResultSize Header {..} = fromIntegral $ hWidth * hHeight
-
--- -- Encoder worker
--- encodeData :: forall pixel. (PixelDecode pixel, Eq pixel) => Proxy pixel -> V.Vector pixel -> BSB.Builder
--- encodeData proxy pixelVect = V.foldl' (<>) mempty $ V.create $ do
---   running <- VM.replicate 64 $ fromRGBA @pixel 0 0 0 0
-
---   builders <- VM.new (V.length pixelVect)
-
---   buildersPos <- newSTRef @Int 0
-
---   let --loop :: forall s. BSB.Builder -> Int -> Int -> pixel -> ST s BSB.Builder
---       loop inPos runLen prevPixel outPos
---         | inPos <= inLen
---         , actualPixel == prevPixel =
---             if runLen /= maxRunLen - 1
---             then loop (inPos + 1) (runLen + 1) prevPixel outPos
---             else do VM.write builders outPos $ encodeRun maxRunLen
---                     writeSTRef buildersPos outPos
---                     loop (inPos + 1) 0 prevPixel (outPos + 1)
---         | inPos <= inLen = do
---             let
---                 (r1, g1, b1, a1) = toRGBA actualPixel
---                 (r0, g0, b0, a0) = toRGBA prevPixel
---                 (dr, dg, db, da) = (r1 - r0, g1 - g0, b1 - b0, a1 - a0)
---                 hash = pixelHash actualPixel
---             VM.write builders outPos $ encodeRun runLen
---             writeSTRef buildersPos outPos
---             case encodeDiff dr dg db da of
---               Just result -> do VM.write running hash actualPixel
---                                 VM.write builders (outPos + 1) result
---                                 writeSTRef buildersPos (outPos + 1)
---                                 loop (inPos + 1) 0 actualPixel (outPos + 2)
---               _ -> do runningPixel <- VM.read running hash
---                       VM.write builders (outPos + 1) $
---                         fromJust $ encodeIndex actualPixel (fromIntegral hash) runningPixel
---                                 <|> encodeLuma dr dg db da
---                                 <|> encodeRGB actualPixel prevPixel
---                       writeSTRef buildersPos (outPos + 1)
---                       loop (inPos + 1) 0 actualPixel (outPos + 2)
---         | otherwise = VM.write builders outPos $ encodeRun runLen
---         where
---           inLen = V.length pixelVect
---           actualPixel = pixelVect V.! inPos
-
---   loop 0 0 (fromRGBA 0 0 0 255) 0
---   l <- readSTRef buildersPos
---   return $ VM.slice 0 l builders
-
--- TODO: convert image to vector of pixels
 
 -- Encoder worker
 encodeData :: forall pixel. (Show pixel, Pixel pixel, PixelDecode pixel) => Proxy pixel -> Image pixel -> BSB.Builder
