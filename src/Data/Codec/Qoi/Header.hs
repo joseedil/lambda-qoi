@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Header where
+module Data.Codec.Qoi.Header where
 
 import Data.Binary
 import Data.Binary.Get (getWord32be)

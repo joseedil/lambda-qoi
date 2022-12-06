@@ -1,6 +1,6 @@
 {-# LANGUAGE Strict #-}
 
-module Util where
+module Data.Codec.Qoi.Util where
 
 import Data.Word
 import Data.Bits

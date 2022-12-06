@@ -1,7 +1,7 @@
 module Main (main) where
 
-import Decoder
-import Encoder
+import Data.Codec.Qoi.Decoder
+import Data.Codec.Qoi.Encoder
 
 import System.Environment
 import System.Exit

@@ -2,11 +2,15 @@
 {-# LANGUAGE BinaryLiterals #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Decoder where
+module Data.Codec.Qoi.Decoder
+  ( decodeQoiBS
+  , decodeQoiPng
+  )
+where
 
-import Header
-import Pixel
-import Util
+import Data.Codec.Qoi.Header
+import Data.Codec.Qoi.Pixel
+import Data.Codec.Qoi.Util
 
 import Data.Bits
 import Data.Binary (decodeOrFail)

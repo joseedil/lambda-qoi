@@ -1,6 +1,6 @@
 {-# LANGUAGE Strict #-}
 
-module Pixel where
+module Data.Codec.Qoi.Pixel where
 
 import Data.Word (Word8)
 import Codec.Picture

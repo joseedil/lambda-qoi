@@ -4,11 +4,15 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Encoder where
+module Data.Codec.Qoi.Encoder
+  ( encodeImageRGB
+  , encodeImageRGBA
+  )
+where
 
-import Header
-import Pixel
-import Util
+import Data.Codec.Qoi.Header
+import Data.Codec.Qoi.Pixel
+import Data.Codec.Qoi.Util
 
 import Data.Bits
 import Data.Word (Word8)
