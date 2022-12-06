@@ -97,30 +97,30 @@ encodeData _ image@Image{..} = mconcat . L.toList $ runST $ do
 
   let loop x y builders runLen prevPixel
         -- end of line: go to next line
-        | x >= imageWidth = trace ("End of line \n") $
+        | x >= imageWidth = --trace ("End of line \n") $
                             loop 0 (y + 1) builders runLen prevPixel
 
         -- end of image: collect the run and finish
-        | y >= imageHeight = trace ("End of image \n") $
+        | y >= imageHeight = --trace ("End of image \n") $
                              return (builders `L.snoc` encodeRun runLen)
 
         -- actual pixel == previous pixel: increment run and loop
         | prevPixel == pixelAt image x y =
             if runLen /= maxRunLen - 1
             -- did not reach maximum run length: loop
-            then trace ("Encoding pixel: " ++ show x ++ " " ++ show y ++ "\n" ++
-                        "Actual pixel: " ++ (show $ pixelAt image x y) ++ "\n" ++
-                        "Previous pixel: " ++ (show prevPixel) ++ "\n" ++
-                        "Run Length: " ++ (show runLen) ++ "\n" ++
-                        "Incrementing runLen \n") $
+            then -- trace ("Encoding pixel: " ++ show x ++ " " ++ show y ++ "\n" ++
+                 --        "Actual pixel: " ++ (show $ pixelAt image x y) ++ "\n" ++
+                 --        "Previous pixel: " ++ (show prevPixel) ++ "\n" ++
+                 --        "Run Length: " ++ (show runLen) ++ "\n" ++
+                 --        "Incrementing runLen \n") $
                  loop (x + 1) y builders (runLen + 1) prevPixel
             -- reached max run length: encode and loop
-            else trace ("Encoding pixel: " ++ show x ++ " " ++ show y ++ "\n" ++
-                        "Actual pixel: " ++ (show $ pixelAt image x y) ++ "\n" ++
-                        "Previous pixel: " ++ (show prevPixel) ++ "\n" ++
-                        "Run Length: " ++ (show runLen) ++ "\n" ++
-                        "Emiting maxRunLen: " ++
-                        (show $ BSB.toLazyByteString $ encodeRun maxRunLen) ++ "\n\n") $
+            else -- trace ("Encoding pixel: " ++ show x ++ " " ++ show y ++ "\n" ++
+                 --        "Actual pixel: " ++ (show $ pixelAt image x y) ++ "\n" ++
+                 --        "Previous pixel: " ++ (show prevPixel) ++ "\n" ++
+                 --        "Run Length: " ++ (show runLen) ++ "\n" ++
+                 --        "Emiting maxRunLen: " ++
+                 --        (show $ BSB.toLazyByteString $ encodeRun maxRunLen) ++ "\n\n") $
                  loop (x + 1) y (builders `L.snoc` encodeRun maxRunLen) 0 prevPixel
 
         -- actual pixel /= previous pixel: try other encoders
@@ -131,13 +131,13 @@ encodeData _ image@Image{..} = mconcat . L.toList $ runST $ do
                 (dr, dg, db, da) = (r1 - r0, g1 - g0, b1 - b0, a1 - a0)
                 hash = pixelHash actualPixel
                 -- flush running encoder
-                runFlush = trace (
-                  "Encoding pixel: " ++ show x ++ " " ++ show y ++ "\n" ++
-                  "Actual pixel: " ++ (show $ pixelAt image x y) ++ "\n" ++
-                  "Previous pixel: " ++ (show prevPixel) ++ "\n" ++
-                  "Run Length: " ++ (show runLen) ++ "\n" ++
-                  "Emiting runLen " ++ show runLen ++ ": " ++
-                  (show $ BSB.toLazyByteString $ encodeRun runLen)) $
+                runFlush = -- trace (
+                  -- "Encoding pixel: " ++ show x ++ " " ++ show y ++ "\n" ++
+                  -- "Actual pixel: " ++ (show $ pixelAt image x y) ++ "\n" ++
+                  -- "Previous pixel: " ++ (show prevPixel) ++ "\n" ++
+                  -- "Run Length: " ++ (show runLen) ++ "\n" ++
+                  -- "Emiting runLen " ++ show runLen ++ ": " ++
+                  -- (show $ BSB.toLazyByteString $ encodeRun runLen)) $
                            builders `L.snoc` encodeRun runLen
 
             -- try QOI_OP_DIFF (1 byte)
@@ -145,33 +145,33 @@ encodeData _ image@Image{..} = mconcat . L.toList $ runST $ do
               -- success: emit chunk and loop
               Just diffBuilder -> do
                 VM.write running hash actualPixel
-                trace ("Emiting DIFF: " ++
-                       (show $ BSB.toLazyByteString diffBuilder) ++ "\n\n") $
-                  loop (x + 1) y (runFlush `L.snoc` diffBuilder) 0 actualPixel
+                -- trace ("Emiting DIFF: " ++
+                --        (show $ BSB.toLazyByteString diffBuilder) ++ "\n\n") $
+                loop (x + 1) y (runFlush `L.snoc` diffBuilder) 0 actualPixel
               -- failed: try others
               _ -> do
                 runningPixel <- VM.read running hash
                 case encodeIndex actualPixel (fromIntegral hash) runningPixel of
                   Just indexChunk -> do
                     VM.write running hash actualPixel
-                    trace ("Emiting INDEX " ++ show hash ++ " to " ++
-                           show runningPixel ++ ": " ++
-                           (show $ BSB.toLazyByteString indexChunk) ++ "\n\n") $
-                      loop (x + 1) y (runFlush `L.snoc` indexChunk) 0 actualPixel
+                    -- trace ("Emiting INDEX " ++ show hash ++ " to " ++
+                    --        show runningPixel ++ ": " ++
+                    --        (show $ BSB.toLazyByteString indexChunk) ++ "\n\n") $
+                    loop (x + 1) y (runFlush `L.snoc` indexChunk) 0 actualPixel
                   _ ->
                     case encodeLuma dr dg db da of
                       Just lumaChunk -> do
                         VM.write running hash actualPixel
-                        trace ("Emiting LUMA: " ++
-                               (show $ BSB.toLazyByteString $ lumaChunk) ++ "\n\n") $
-                          loop (x + 1) y (runFlush `L.snoc` lumaChunk) 0 actualPixel
+                        -- trace ("Emiting LUMA: " ++
+                        --        (show $ BSB.toLazyByteString $ lumaChunk) ++ "\n\n") $
+                        loop (x + 1) y (runFlush `L.snoc` lumaChunk) 0 actualPixel
                       _ ->
                         case encodeRGB actualPixel prevPixel of
                           Just rgbChunk -> do
                             VM.write running hash actualPixel
-                            trace ("Emiting RGB: " ++
-                                   (show $ BSB.toLazyByteString $ rgbChunk) ++ "\n\n") $
-                              loop (x + 1) y (runFlush `L.snoc` rgbChunk) 0 actualPixel
+                            -- trace ("Emiting RGB: " ++
+                            --        (show $ BSB.toLazyByteString $ rgbChunk) ++ "\n\n") $
+                            loop (x + 1) y (runFlush `L.snoc` rgbChunk) 0 actualPixel
                           Nothing -> error "impossible"
 
                 -- let chunkBuilder' = fromJust $ --fromJust can't fail because encodeRGB can't fail
