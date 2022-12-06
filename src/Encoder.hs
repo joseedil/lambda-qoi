@@ -22,6 +22,8 @@ import qualified Data.Vector.Mutable as VM
 import Data.Data
 import Codec.Picture
 import Data.Binary (encode)
+import Data.Maybe (fromJust)
+import Control.Applicative ((<|>))
 
 
 -- Checks if -bound <= delta < bound
@@ -131,33 +133,18 @@ encodeData _ image@Image{..} = mconcat . L.toList $ runST $ do
               -- failed: try others
               _ -> do
                 runningPixel <- VM.read running hash
-                case encodeIndex actualPixel (fromIntegral hash) runningPixel of
-                  Just indexChunk -> do
-                    VM.write running hash actualPixel
-                    loop (x + 1) y (runFlush `L.snoc` indexChunk) 0 actualPixel
-                  _ ->
-                    case encodeLuma dr dg db da of
-                      Just lumaChunk -> do
-                        VM.write running hash actualPixel
-                        loop (x + 1) y (runFlush `L.snoc` lumaChunk) 0 actualPixel
-                      _ ->
-                        case encodeRGB actualPixel prevPixel of
-                          Just rgbChunk -> do
-                            VM.write running hash actualPixel
-                            loop (x + 1) y (runFlush `L.snoc` rgbChunk) 0 actualPixel
-                          Nothing -> error "impossible"
 
-                -- let chunkBuilder' = fromJust $ --fromJust can't fail because encodeRGB can't fail
-                --       -- try QOI_OP_INDEX (1 byte)
-                --       encodeIndex actualPixel (fromIntegral hash) runningPixel <|>
-                --       -- try QOI_OPLUMA (2 bytes)
-                --       encodeLuma dr dg db da <|>
-                --       -- try QOI_OP_RGB or QOI_OP_RGBA (4 or 5 bytes)
-                --       encodeRGB actualPixel prevPixel
+                let nextChunk =
+                      fromJust $ --fromJust can't fail because encodeRGB can't fail
+                      -- try QOI_OP_INDEX (1 byte)
+                      encodeIndex actualPixel (fromIntegral hash) runningPixel <|>
+                      -- try QOI_OPLUMA (2 bytes)
+                      encodeLuma dr dg db da <|>
+                      -- try QOI_OP_RGB or QOI_OP_RGBA (4 or 5 bytes)
+                      encodeRGB actualPixel prevPixel
 
-                -- trace ("Emiting: " ++
-                --       (show $ BSB.toLazyByteString chunkBuilder') ++ "\n\n"
-                --       ) $ loop (x + 1) y (runFlush `L.snoc` chunkBuilder') 0 actualPixel
+                VM.write running hash actualPixel
+                loop (x + 1) y (runFlush `L.snoc` nextChunk) 0 actualPixel
 
   loop 0 0 L.empty 0 (fromRGBA 0 0 0 255)
 
