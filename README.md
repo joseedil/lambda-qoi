@@ -8,7 +8,18 @@ Video demo:
 
 ## Description:
 
-The [Quite OK Image Format](https://qoiformat.org/) (QOI) is a lossless image compression algorithm developed by Dominic Szablewski. His goal was to achieve a fast codec without sacrificing too much the compression rates achieved by the PNG file format. `lambda-qoi` implements decoding from QOI back to PNG, but the library is suficiently generic to allow one to decode a QOI File to a vector of pixels as part of another image processing application.
+The [Quite OK Image Format](https://qoiformat.org/) (QOI) is a lossless image compression algorithm developed by Dominic Szablewski. His goal was to achieve a fast codec without sacrificing too much the compression rates achieved by the PNG file format. `lambda-qoi` implements a transcoder from QOI to PNG and vice-versa, but the library is suficiently generic to allow one to decode a QOI File to a vector of pixels as part of another image processing application.
+
+### Compilation and Use
+
+Compile the project with `stack build`. It should be able to get the required libraries and build the project.
+
+Run the executable with `stack exec lambda-qoi -- e <input.png> <output.qoi>` to encode a PNG image to a QOI file.
+
+Run the executable with `stack exec lambda-qoi -- d <input.qoi> <output.png>` to decode a QOI image to a PNG file.
+
+There are some test images in the `data` folder as provided by the QOI author.
+
 
 ### Implementation details
 
@@ -19,6 +30,10 @@ The file `src/Pixel.hs` has the basic data types to represent a pixel in the pro
 The header of the image files is defined in `src/Header.hs`. It consists of the image width and height info together with how many channels there are in each pixel and its colorspace. We use the [binary](https://hackage.haskell.org/package/binary) provides facilities to serialize and deserialize Haskell data types. Note that we treat the required header magic bytes in the `get` and `put` functions for the header, but we do not store that information, failing if we try to decode an invalid qoi file.
 
 The `src/Util.hs` file defines some utility functions used in the decoder just to make the code a bit cleaner.
+
+The main application lives in the `app/Main.hs` file. It reads the command line arguments, get the raw qoi encoded string from a file on the disk and tries to decode it, saving the decoded image to a PNG file on disk
+
+#### Decoding
 
 The file `src/Decoder.hs` is where the logic of the decoding algorithm lives. The type `Chunk` is used to represent the specified data chunks in which we can represent a single pixel, a run of repeated pixels and consult a pixel stored in a running array of previously seen pixels.
 
@@ -40,13 +55,10 @@ Finally, call the loop with initial values and return the output vector.
 
 It follows two driving functions. `decodeQoiBS` takes a raw byte string and returns a tuple with the header and the decoded vector of pixels. The `decodeQoiPng` takes a raw bytestring and returns its header together with a `JuicyPixels` image representation that can be used to export the library supported file formats.
 
-The main application lives in the `app/Main.hs` file. It reads the command line arguments, get the raw qoi encoded string from a file on the disk and tries to decode it, saving the decoded image to a PNG file on disk
+#### Encoding
 
+The logic of the encoder lives in the file `src/Encoder.hs`. The functions `encodeDiff`, `encodeLuma`, `encodeIndex`, and `encodeRGB` try to create a QOI chunk from the information available. They can fail (return `Nothing`) in case of not being possible to create that kind of chunk. `encodeRGB` in particular handles both `RGB` and `RGBA` cases and can't fail (always emit a `Just` value). The `encodeRun` will always succeed to create a chunk.
 
-### Compilation
+The main driver is the `encodeData` function. It takes a `JuicyPixels` image and loops throught its pixels in raster scan order. In the first main branch it checks if the current pixel is equal to the previous visited pixel, in which case it manages the information required to emit a QOI_OP_RUN chunk. On the default branch the algorithm tries to emit the other chunks in the order that minimizes the final bitstream.
 
-Compile the project with `stack build`. It should be able to get the required libraries and build the project.
-
-Run the executable with `stack exec lambda-qoi -- <input.qoi> <output.png>`.
-
-There are some test images in the `data` folder as provided by the QOI author.
+The `encodeImageRGB` and `encodeImageRGBA` functions build the final bitstream by building the header and end sequence.
